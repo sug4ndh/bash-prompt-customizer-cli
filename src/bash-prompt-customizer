@@ -1,0 +1,682 @@
+#!/bin/bash -i
+
+################################################################################################
+# Bash prompt customizer is a bash program that allows the users to customize their            #
+# bash prompts by letting them select elements and colors. It also gives a preview of the      #
+# elements that user has selected. It finally stores the created value of PS1 to ~/.bashrc     #
+# file, if the user opts to save the generated configuration. On it's first run, it stores the #
+# default value of PS1 to ~/.bashrc with which PS1 can be restored to its initial value before #
+# running this program.                                                                        #
+################################################################################################
+
+# Variables used for setting extend variable's value
+u1="user";
+h1="host";
+hd="host.domain.com";
+s1="shell";
+d1="dir";
+
+src=`dirname $BASH_SOURCE`  ##To get the directory path to use delete
+
+# Variables used in time & date
+d="$(date +"%a-%m-%d-%Y")"
+t24=$(date +"%T")
+t12=$(date +"%r")
+
+# Defining text formats
+BOLD=`tput bold`
+NORMAL=`tput sgr0`
+
+# Defining colors
+boldRED='\e[1;31m';
+PURPLE='\e[0;35m';     
+BROWN='\e[1;33m';     
+boldGRAY='\e[0;37m';     
+DARKGRAY='\e[1;30m';
+boldBLUE='\e[1;34m';
+boldGREEN='\e[1;32m';
+boldCYAN='\e[1;36m';
+boldPURPLE='\e[1;35m';
+RED='\e[0;31m';
+MAGENTA='\e[0;35m';
+boldMAGENTA='\e[1;35m';
+BLACK='\e[0;30m';    
+BLUE='\e[0;34m' ; 
+GREEN='\e[0;32m';     
+CYAN='\e[0;36m';    
+YELLOW='\e[0;33m';
+WHITE='\e[1;37m';
+NC='\e[0m'; # No Color
+
+# temp stores the value that PS1 will finally take;
+# extend stores and displays what user has selected. If a color is selected then
+# the next element which is selected takes the color which was previously selected. 
+# This color is retained until a new color is selected.
+# If no color is selected then the element takes the default text color of the terminal 
+
+case $SAVE in
+# To store the PS1 value before running the script
+	"")SAVE=$PS1
+	 echo "Saving default PS1 and the value is "$SAVE
+	 echo "SAVE=""\"$SAVE\"" >> $HOME/.bashrc
+	 echo "PS1=""\"$PS1\"" >> $HOME/.bashrc
+	;;
+	*)echo "SAVE not empty so not writing"
+	;;
+esac
+
+
+display(){
+	## Displays the PS1 value and elements selected by user
+	echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+	echo -e "${NC}"
+	echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+	echo $temp
+	}
+	
+delete(){
+	## Deletes previous choice selected by user be it color or elements 
+	echo -e "${BROWN}Deleting previous selection...${NC}."
+	. $src/deletion;
+	
+	temp=$latemp;
+	extend=$laextend;
+	
+	export extend
+	export temp;
+	
+}
+
+saving(){ 
+	## saves the PS1 value ~/.bashrc file before exiting the script
+	echo -e "${BROWN}Saving changes....${NC}"
+	#To minimize populating .bashrc file with $PS1
+	sed '$d' ~/.bashrc > ~/.temptemp 
+    mv ~/.temptemp ~/.bashrc 
+    #saving PS1
+	PS1="\"$temp \[\e[0m\]\""  
+	export PS1
+	echo "PS1=""$PS1" >> $HOME/.bashrc
+	export PS1
+	exit 1
+}
+
+resettodefault(){ 
+	echo -e "${BROWN}Resetting to default....${NC}"
+	echo -e "${BROWN}Now exiting....${NC}"
+	#To minimize populating .bashrc file with $PS1
+	sed '$d' ~/.bashrc > ~/.temptemp 
+    mv ~/.temptemp ~/.bashrc 
+    #Resetting PS1
+	PS1=$SAVE
+	export PS1
+	echo "PS1=""\"$PS1\"" >> $HOME/.bashrc
+}
+
+exiting(){
+	## nothing much just echoes
+	echo -e "${BROWN}Exiting....${NC}"
+}
+
+wronginput(){
+	# Gets called whenever a digit not listed has been entered
+	echo -e "${boldRED}Error: Wrong input${NC}"
+	export temp
+	export extend
+	echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+	echo -e "${NC}"
+	echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+	echo $temp
+	setelement
+}
+
+changecolor(){
+	# Asks the user to change color for next element
+	
+	echo -e "${BROWN}Do you want to change color for next element? (Y/N) ${NC}"
+	read colorinput
+	
+	if [ $colorinput = "Y" ]||[ $colorinput = "y" ]; then
+		colorize
+	
+	elif [ $colorinput = "N" ]||[ $colorinput = "n" ]; then
+		echo ""
+	
+	else
+		echo -e "${boldRED}Error: Wrong input${NC}"
+		changecolor
+	fi
+}
+
+setelement(){
+	# Provides basic elements that the user can choose from
+	printf "\n\n"
+	printf "${BROWN}%40s\n" "BASIC ELEMENTS MENU"
+	
+	echo -e "${RED}Choose from the following options by entering corresponding digit(s)${NC}"
+	printf "%-35s\t%-20s\n${NC}" "1) username" "2) hostname up to the first '.'" 
+	printf "%-35s\t%-20s\n${NC}" "3) hostname" "4) shell"
+	printf "%-35s\t%-20s\n${NC}" "5) current working directory" "6) basename of working directory "
+	printf "%-35s\t%-20s\n${NC}" "7) $" "8) DELETE LAST SELECTION" 
+	printf "%-35s\t%-20s\n${NC}" "9) Special charachters menu" "10) Time & date menu"
+	printf "%-35s\t%-20s\n${NC}" "11) Go to ready-to-go prompts menu" "12) Reset prompt to default"
+	printf "%-35s\t%-20s\n${NC}" "13) EXIT SAVING CHANGES" "14) EXIT WITHOUT SAVING CHANGES"
+	printf "%-35s\t%-20s\n${NC}" "15) Select color" "16) Display elements in my prompt"
+	printf "%-35s\t%-20s\n${NC}" "17) newline"
+	read c;
+	
+	case $c in
+		1)temp=$temp"\\u"
+		extend=$extend$u1
+		;;
+		2)temp=$temp"\\h"
+		extend=$extend$h1
+		;;
+		3)temp=$temp"\\H"
+		extend=$extend$hd
+		;;
+		4)temp=$temp"\\s"
+		extend=$extend$s1
+		;;
+		5)temp=$temp"\\w"
+		extend=$extend$d1
+		;;
+		6)temp=$temp"\\W"
+		extend=$extend$d1
+		;;
+		7)temp=$temp"\\$"
+		extend=$extend"\$"
+		;;
+		8)delete
+		;;
+		9)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+		;;
+		10)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+		;;
+		11)readytogo
+		;;
+		12)resettodefault
+		exit 1
+		;;
+		13)saving
+		;;
+		14)exiting
+		exit 1
+		;;
+		15)colorize
+		;;
+		16)echo""
+		;;
+		17)temp=$temp"\\n"
+		extend=$extend"\n"
+		;;
+		*)wronginput
+		;;
+	esac
+	display
+	changecolor
+	echo -e "${BROWN}You can: "
+	echo -e "${BROWN}\tAdd something else from basic elements menu (Y) \n\tDelete last selection (D) \n\tExit saving changes (S) \n\tExit discarding changes (E)?${NC}";
+	read i;
+	echo $i
+	
+	if [ $i = "Y" ]||[ $i = "y" ]; then
+		export temp
+		export extend
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement;
+		
+	elif [ "$i" = "S" ]||[ "$i" = "s" ]; then
+		display
+		saving
+	
+	elif [ "$i" = "E" ]||[ "$i" = "e" ]; then
+		exiting
+	
+	elif [ "$i" = "D" ]||[ "$i" = "d" ]; then
+		delete
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+	
+	else 
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		wronginput
+	fi
+}
+
+setspecialchar(){
+	# Provides special characters that the user can choose from
+	printf "\n\n"
+	printf "${BROWN}%40s\n" "SPECIAL CHARACTERS MENU"
+	
+	printf "${RED}%-30s\t%-20s\n${NC}" "Choose from the following options by entering corresponding digit(s) to select date & time format";
+	printf "%-30s\t%-20s\n${NC}" "1) @" "2) :" 
+	printf "%-30s\t%-20s\n${NC}" "3) -" "4) _"
+	printf "%-30s\t%-20s\n${NC}" "5) [" "6) ]"
+	printf "%-30s\t%-20s\n${NC}" "7) *" "8) space"
+	printf "%-30s\t%-20s\n${NC}" "9) DELETE LAST SELECTION" "10) Go to basic elements menu"
+	printf "%-30s\t%-20s\n${NC}" "11) Go to time & date menu" "12) Go to ready-to-go prompts menu"
+	printf "%-30s\t%-20s\n${NC}" "13) EXIT SAVING CHANGES" "14) EXIT WITHOUT SAVING CHANGES"
+	printf "%-30s\t%-20s\n${NC}" "15) Display elements in my prompt"
+	read c;
+	
+	case $c in
+		1)temp=$temp"@"
+		extend=$extend"@"
+		;;
+		2)temp=$temp":"
+		extend=$extend":"
+		;;
+		3)temp=$temp"-"
+		extend=$extend"-"
+		;;
+		4)temp=$temp"_"
+		extend=$extend"_"
+		;;
+		5)temp=$temp"["
+		extend=$extend"["
+		;;
+		6)temp=$temp"]"
+		extend=$extend"]"
+		;;
+		7)temp=$temp"*"
+		extend=$extend"*"
+		;;
+		8)temp=$temp" "
+		extend=$extend" "
+		;;
+		9)delete
+		;;
+		10)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+		;;
+		11)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+		;;
+		12)readytogo
+		;;
+		13)saving
+		;;
+		14)exiting
+		exit 1;;
+		15)echo ""
+		;;
+		*)echo -e "${boldRED}Error: Wrong input${NC}"
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar;;
+	esac
+	display
+	changecolor
+	echo -e "${BROWN}You can: "
+	echo -e "${BROWN}\tAdd something else from special characters menu (Y/N) \n\tDelete last selection(D) \n\tExit saving changes(S) \n\tExit discarding changes(E)${NC}";
+	read i
+	
+	if [ "$i" = "Y" ]||[ "$i" = "y" ]; then
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+	
+	elif [ "$i" = "N" ]||[ "$i" = "n" ]; then
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+	
+	elif [ "$i" = "D" ]||[ "$i" = "d" ]; then
+		delete
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+	
+	elif [ "$i" = "S" ]||[ "$i" = "s" ]; then
+		display
+		saving
+	
+	elif [ "$i" = "E" ]||[ "$i" = "e" ]; then
+		exiting
+	
+	else 
+		echo -e "${boldRED}Error: Wrong input${NC}"
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+	fi
+}
+
+setdayandtime(){
+	# Provides day and time elements that the user can choose from
+	printf "\n\n"
+	printf "${BROWN}%40s\n" "TIME & DATE MENU"
+	
+	printf "${RED}%-30s\t%-20s\n${NC}" "Choose from the following options by entering corresponding digits to select date & time format";
+	printf "%-35s\t%-20s\n${NC}" "1) day & date" "2) 24 hr time" 
+	printf "%-35s\t%-20s\n${NC}" "3) 12 hr time" "4) DELETE LAST SELECTION"
+	printf "%-35s\t%-20s\n${NC}" "5) Go to basic elements menu" "6) Go to special character menu"
+	printf "%-35s\t%-20s\n${NC}" "7) Go to ready-to-go prompts menu" "8) EXIT SAVING CHANGES"
+	printf "%-35s\t%-20s\n${NC}" "9) EXIT WITHOUT SAVING CHANGES" "10) Display elements in my prompt"
+	read c;
+	
+	case $c in
+		1)temp=$temp"\\d"
+		extend=$extend$d
+		;;
+		2)temp=$temp"\\t"
+		extend=$extend$t24
+		;;
+		3)temp=$temp"\\T"
+		extend=$extend$t12
+		;;
+		4)delete
+		;;
+		5)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+		;;
+		6)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+		;;
+		7)readytogo
+		;;
+		8)saving
+		;;
+		9)exiting
+		;;
+		10)echo ""
+		;;
+		*)echo -e "${RED}Error: Wrong input${NC}"
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+		;;
+	esac
+	display
+	changecolor
+	echo -e "${BROWN}You can: "
+	echo -e "${BROWN}\tAdd something else from time & date menu(Y/N) \n\tDelete last selection(D) \n\tExit saving changes \n\tExit discarding changes(E)${NC}";
+	read i
+	
+	if [ "$i" = "Y" ]||[ $i = "y" ]; then
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+	elif [ "$i" = "N" ]||[ "$i" = "n" ]; then
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+	
+	elif [ "$i" = "D" ]||[ "$i" = "d" ]; then
+		delete
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+	
+	elif [ "$i" = "S" ]||[ "$i" = "s" ]; then
+		display
+		saving
+	
+	elif [ "$i" = "E" ]||[ "$i" = "e" ]; then
+		exiting
+	
+	else 
+		echo -e "${boldRED}Error: Wrong input${NC}"
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+	fi
+
+}
+
+start(){
+	# Provides the user with starting menu
+	echo -e "${RED}Choose from the following options by entering corresponding digit ~>${NC}"
+	echo "1) Choose from some ready-to-go prompts" 
+	echo "2) Create your own prompt"
+	echo "3) Reset prompt to default" 
+	echo "4) Exit from the program"
+	read input
+	case $input in
+		1)readytogo
+		;;
+		2)setelement
+		;;
+		3)resettodefault
+		exit 1
+		;;
+		4)exit 1
+		;;
+		*)echo -e "${boldRED}Error : Wrong input"
+		start
+	esac
+}
+
+readytogo(){
+	# Provides ready to go prompts that the user can choose from
+	printf "\n\n"
+	printf "${BROWN}%40s\n" "READY-TO-GO PROMPTS MENU"
+	
+	echo -e "${BROWN}These are ready-to-go bash prompt. The themes are listed below and also how they will look on your system.${NC}"
+	echo -e "${RED}Choose from the following prompt style by entering corresponding digit(s)${NC}"
+	echo -e "1) Regular Blue:" "${NC}[user@${BLUE}host${NC} ~/customizer]$" 
+	echo -e "2) GnB:" "${GREEN}user${BLUE} ~/customizer${boldGREEN} $ ${NC}"  
+	echo -e "3) RnB:" "${RED}user${BLUE} ~/customizer${boldRED} $ ${NC}" 
+	echo -e "4) 5UI:" " ${CYAN}-${GREEN}-[${CYAN}05:24${GREEN}:${CYAN}Fri Mar 13${GREEN}:${NC}$ ${GREEN}]-[${CYAN}~/customizer${GREEN}]-${CYAN}-\n\t -${GREEN}-[${CYAN}user${GREEN}@${CYAN}host${GREEN}]-${CYAN}- ${NC}"
+	echo -e "5) Minimal:" "[~/customizer]$"
+	echo -e "6) Cygwin prompt:" "${GREEN}user@host: ${BROWN}~/customizer${NC} \n\t\t  $ "
+	echo -e "7) Fug:" "${GREEN}user${NC}@host ${YELLOW}[Fri Mar 14-07:15] ${CYAN}~/customizer$ ${NC}"
+	echo "8) Go to basic elements selection menu"
+	echo "9) Go to time & date selection menu"
+	echo "10) Go to special character selection menu"
+	echo "11) Exit from the program"
+	read input
+	
+	case $input in
+		1)temp="[\u@\[\e[0;34m\]\h \[\e[0m\]\w]\$"
+		;;
+		2)temp="\[\e[0;32m\]\u\[\e[m\] \[\e[0;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[0m\]"
+		;;
+		3)temp="\[\e[0;31m\]\u\[\e[m\] \[\e[0;34m\]\w\[\e[m\] \[\e[0;31m\]\$\[\e[0m\]"
+		;;
+		4)temp="\[\e[0;36m\]-\[\e[0;32m\]-[\[\e[0;36m\]\A\[\e[0;32m\]:\[\e[0;36m\]\d\[\e[0;32m\]:\[\e[0m\]\$ \[\e[0;36m\]]-\[\e[0;32m\]-[\[\e[0;36m\]\w\[\e[0;36m\]]-\[\e[0;36m\]-\n-\[\e[0;32m\]-[\[\e[0;36m\]\u\[\e[0;32m\]@\[\e[0;36m\]\h\[\e[0;32m\]]-\[\e[0;36m\]-\[\e[0m\]"
+		;;
+		5)temp="[\w]\$"
+		;;
+		6)temp="\[\e]0;\w\a\]\n\[\e[32m\]\u@\h: \[\e[33m\]\w\[\e[0m\]\n\$"
+		;;
+		7)temp="\[\e[0;32m\]\u\[\e[0m\]@\h \[\e[0;33m\][\d-\A] \[\e[0;36m\]\w\$\[\e[0m\]"
+		;;
+		8)setelement
+		;;
+		9)setdayandtime
+		;;
+		10)setspecialchar
+		;;
+		11)exit 1
+		;;
+		*)echo -e "${boldRED}Error: Wrong input${NC}"
+		readytogo
+		;;
+	esac
+	echo -e "${BROWN}You can: "
+	echo -e "${BROWN}\tSAVE & EXIT (S) \n\tGo back to the main menu discarding changes (M)${NC}";
+	read i;
+	
+	if [ $i = "S" ]||[ $i = "s" ]; then
+		export temp
+		export extend
+		saving
+	
+	elif [ "$i" = "M" ]||[ "$i" = "m" ]; then
+		temp=""
+		start
+	
+	else
+		echo -e "${boldRED}Error: Wrong input${NC}"
+		readytogo
+	fi
+}
+
+colorize(){
+	# Provides colors that the user can choose from
+
+	printf "\n\n"
+	printf "${BROWN}%40s\n" "COLORS MENU"
+	
+	echo -e "${PURPLE}When you select a color, the elements that you select next will take that color until you change the color."
+	echo "If you have selected a color and an element after that, then to delete the color you first have to delete the element and then the color."
+	echo -e "${RED}Choose from these colors by entering corresponding digit(s)~>${NC}"
+	printf "%-40s\t%-20s\n" "1) red" "2) boldred" 
+	printf "%-40s\t%-20s\n" "3) magenta" "4) bold magenta" 
+	printf "%-40s\t%-20s\n" "5) blue" "6) bold blue" 
+	printf "%-40s\t%-20s\n" "7) cyan" "8) bold cyan" 
+	printf "%-40s\t%-20s\n" "9) green" "10) bold green" 
+	printf "%-40s\t%-20s\n" "11) purple" "12) bold purple" 
+	printf "%-40s\t%-20s\n" "13) dark gray" "14) bold gray" 
+	printf "%-40s\t%-20s\n" "15) brown" "16) yellow" 
+	printf "%-40s\t%-20s\n" "17) black" "18) white" 
+	printf "%-40s\t%-20s\n" "19) current text color of terminal" "20) back to basic elements menu"
+	printf "%-40s\t%-20s\n" "21) back to special characters menu" "22) back to time & date menu"
+	read input
+	
+	case $input in
+		1)temp=$temp\\["$RED"\\]  
+		extend=$extend$RED	
+		;;
+		2)temp=$temp\\["$boldRED"\\]
+		extend=$extend$boldRED
+		;;
+		3)temp=$temp\\["$MAGENTA"\\]
+		extend=$extend$MAGENTA
+		;;
+		4)temp=$temp\\["$boldMAGENTA"\\]
+		extend=$extend$boldMAGENTA
+		;;
+		5)temp=$temp\\["$BLUE"\\]
+		extend=$extend$BLUE
+		;;
+		6)temp=$temp\\["$boldBLUE"\\]
+		extend=$extend$boldBLUE
+		;;
+		7)temp=$temp\\["$CYAN"\\]
+		extend=$extend$CYAN
+		;;
+		8)temp=$temp\\["$boldCYAN"\\]
+		extend=$extend$boldCYAN
+		;;
+		9)temp=$temp\\["$GREEN"\\]
+		extend=$extend$GREEN
+		;;
+		10)temp=$temp\\["$boldGREEN"\\]
+		extend=$extend$boldGREEN
+		;;
+		11)temp=$temp\\["$PURPLE"\\]
+		extend=$extend$PURPLE
+		;;
+		12)temp=$temp\\["$boldPURPLE"\\]
+		extend=$extend$boldPURPLE
+		;;
+		13)temp=$temp\\["$DARKGRAY"\\]
+		extend=$extend$DARKGRAY
+		;;
+		14)temp=$temp\\["$boldGRAY"\\]
+		extend=$extend$boldGRAY
+		;;
+		15)temp=$temp\\["$BROWN"\\]
+		extend=$extend$BROWN
+		;;
+		16)temp=$temp\\["$YELLOW"\\]
+		extend=$extend$YELLOW
+		;;
+		17)temp=$temp\\["$BLACK"\\]
+		extend=$extend$BLACK
+		;;
+		18)temp=$temp\\["$WHITE"\\]
+		extend=$extend$WHITE
+		setelement
+		;;
+		19)temp=$temp\\["$NC"\\]
+		extend=$extend$NC
+		;;
+		20)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setelement
+		;;
+		21)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setspecialchar
+		;;
+		22)echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		setdayandtime
+		;;
+		*)echo -e "${boldRED}Error: Wrong input${NC}"
+		echo -e "${boldGREEN}Prompt elements ${NC}:\n"$extend
+		echo -e "${NC}"
+		echo -e "${boldGREEN}Your generated PS1 variable:${NC}"
+		echo $temp
+		colorize
+		;;
+	esac
+	display
+	setelement
+}
+
+printf "${BROWN}%50s\n" "BASH PROMPTER CUSTOMIZER V1.0"	
+
+start
+
+
+

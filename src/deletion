@@ -1,0 +1,96 @@
+#!/bin/bash
+
+#Deletes the last choice selected by the user, be it color or an element
+
+u1="user";
+h1="host";
+hd="host.domain.com";
+s1="shell";
+d1="dir";
+
+thirdlast=${temp: -5} #'[0m' for detecting text color of terminal
+nc='\e[0m\]'
+last=${temp: -1}; # for getting the last character from PS1 value
+seclast=${temp: -3}  # 'm\]' for detecting colors
+nccheck=$NC #check ${temp: -5}
+
+delete_latemp_color(){
+	
+	while [ "$last" != "e" ]; do 
+		
+		if [ "$last" = "\\" ]; then 
+			last=\\$last
+			latemp=${latemp%$last}
+			last=${latemp: -1}
+			
+		else
+			latemp=${latemp%$last}
+			last=${latemp: -1}
+			
+		fi
+		done
+		latemp=${latemp%$last}
+		last=${latemp: -1}
+		
+		latemp=${latemp: 0:-1};
+		last=${latemp: -1}
+		
+		latemp=${latemp%$last}
+		latemp=${latemp: 0:-1};
+}
+
+deletecolor(){
+	# Gets called whenever the last choice to delete is color
+	
+	latemp=$temp
+	
+	if [ "$thirdlast" = "[0m\]" ]; then
+		echo "found default color"
+		delete_latemp_color
+		laextend=${extend: 0:-5} #  for deleting $NC value from prompt view
+	
+	else
+		echo "found color"
+		delete_latemp_color
+		laextend=${extend: 0:-8} # for deleting color value
+	fi
+}
+
+if [ "$seclast" = "m\]" ]; then
+	#echo "calling deletecolor"
+		deletecolor
+
+elif [ "$last" = "n" ]; then
+	laextend=${extend: 0:-2}
+	latemp=${temp%\\*$last} 
+
+elif [ "$last" = "@" ]||[ "$last" = ":" ]||[ "$last" = "[" ]||[ "$last" = "]" ]||[ "$last" = "*" ]||[ "$last" = " " ]||[ "$last" = "-" ]||[ "$last" = "_" ]; then
+	latemp=${temp%$last}
+	laextend=${extend%$last}
+	
+else
+	latemp=${temp%\\*$last} ;
+	
+	case $last in
+		"u")laextend=${extend%$u1}
+				;;
+		"h")laextend=${extend%$h1}
+				;;
+		"H")laextend=${extend%$hd}
+				;;
+		"s")laextend=${extend%$s1}
+				;;
+		"W")laextend=${extend%$d1}
+				;;
+		"d")laextend=${extend%$d}
+				;;
+		"t")laextend=${extend%$t24}
+				;;
+		"T")laextend=${extend%$t12}
+				;;
+		"$")laextend=${extend%$last}
+				;;
+	esac	
+fi
+
+
