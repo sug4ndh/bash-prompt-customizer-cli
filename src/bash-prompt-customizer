@@ -153,6 +153,7 @@ setelement(){
 	printf "\n\n"
 	printf "${BROWN}%40s\n" "BASIC ELEMENTS MENU"
 	
+	echo -e "${GREEN}To color an element, select the color before you select that element${NC}"
 	echo -e "${RED}Choose from the following options by entering corresponding digit(s)${NC}"
 	printf "%-35s\t%-20s\n${NC}" "1) username" "2) hostname up to the first '.'" 
 	printf "%-35s\t%-20s\n${NC}" "3) hostname" "4) shell"
